@@ -9,21 +9,19 @@ public class Screen
 	public final int MAP_SIZE = 64;
 	public final int MAP_SIZE_MASK = MAP_SIZE - 1;
 	public int[] tiles = new int[MAP_SIZE * MAP_SIZE];
-
-	private Random random = new Random();
+	
+	private Random random;
 
 	public Screen(int width, int height)
 	{
 		WIDTH = width;
 		HEIGHT = height;
 		pixels = new int[width * height];
+		random = new Random();
 
 		for (int i = 0; i < MAP_SIZE * MAP_SIZE; i++)
 		{
-			for (int j = MAP_SIZE; j > 0; j-=3)
-			{
-				tiles[i] = (0xf84fff - i + j) + 8686436;
-			}
+			tiles[i] = 0xffffff * random.nextInt();
 		}
 	}
 

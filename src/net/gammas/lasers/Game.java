@@ -1,16 +1,19 @@
 package net.gammas.lasers;
 
 import java.awt.Canvas;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.util.Random;
 
 import javax.swing.JFrame;
 
 import net.gammas.lasers.display.Screen;
+import net.gammas.lasers.input.Keyboard;
+import net.gammas.lasers.utils.Handler;
+import net.gammas.lasers.utils.ObjectList;
 
 public class Game extends Canvas implements Runnable
 {
@@ -22,9 +25,13 @@ public class Game extends Canvas implements Runnable
 
 	private Thread thread;
 	private JFrame frame;
-	private boolean running = false;
-
 	private Screen screen;
+	private Keyboard key;
+	private Handler handler;
+	private Random random;
+	private ObjectList objectList;
+
+	private boolean running = false;
 
 	private BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
 	private int[] pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
@@ -34,8 +41,14 @@ public class Game extends Canvas implements Runnable
 		Dimension size = new Dimension(WIDTH * SCALE, HEIGHT * SCALE);
 		setPreferredSize(size);
 
+		handler = new Handler();
 		screen = new Screen(WIDTH, HEIGHT);
 		frame = new JFrame();
+		key = new Keyboard(handler);
+		random = new Random();
+		objectList = new ObjectList(handler);
+
+		addKeyListener(key);
 	}
 
 	public synchronized void start()
@@ -62,8 +75,10 @@ public class Game extends Canvas implements Runnable
 	{
 		long lastTime = System.nanoTime();
 		long timer = System.currentTimeMillis();
-		final double ns = 1000000000.0 / 120.0;
+		final double ns = 1000000000.0 / 60.0;
+		final double ns1 = 1000000000.0 / 120.0;
 		double delta = 0;
+		double delta1 = 0;
 		int frames = 0;
 		int ticks = 0;
 
@@ -71,6 +86,7 @@ public class Game extends Canvas implements Runnable
 		{
 			long now = System.nanoTime();
 			delta += (now - lastTime) / ns;
+			delta1 += (now - lastTime) / ns1;
 			lastTime = now;
 
 			while (delta >= 1)
@@ -79,8 +95,13 @@ public class Game extends Canvas implements Runnable
 				ticks++;
 				delta--;
 			}
-			render();
-			frames++;
+			
+			while (delta1 >= 1)
+			{
+				render();
+				frames++;
+				delta1--;
+			}
 
 			if (System.currentTimeMillis() - timer > 1000)
 			{
@@ -93,12 +114,9 @@ public class Game extends Canvas implements Runnable
 		}
 	}
 
-	private int x, y;
-	
 	private void tick()
 	{
-		x++;
-		y++;
+		handler.tick();
 	}
 
 	private void render()
@@ -110,19 +128,21 @@ public class Game extends Canvas implements Runnable
 			return;
 		}
 
-		screen.clear();
-		screen.render(x, y);
+		// screen.clear();
+		// screen.render(x, y);
 
-		for (int i = 0; i < pixels.length; i++)
-		{
-			pixels[i] = screen.pixels[i];
-		}
+		// for (int i = 0; i < pixels.length; i++)
+		// {
+		// pixels[i] = screen.pixels[i];
+		// }
 
 		Graphics g = bs.getDrawGraphics();
 
 		// --- Draw Graphics Start --- \\
 
 		g.drawImage(image, 0, 0, getWidth(), getHeight(), null);
+
+		handler.render(g);
 
 		// --- Draw Graphics End --- \\
 
